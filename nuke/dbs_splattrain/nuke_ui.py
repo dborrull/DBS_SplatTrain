@@ -341,8 +341,7 @@ def create_3d(node):
         x, y = int(float(nuke.tcl("value %s.xpos" % name))), int(float(nuke.tcl("value %s.ypos" % name)))
     except Exception:
         x, y = 0, 0
-    text = """set cut_paste_input [stack 0]
-%(cam)sset N_cam [stack 0]
+    text = """%(cam)sset N_cam [stack 0]
  GeoImport {
   inputs 0
   file %(file)s
@@ -374,9 +373,9 @@ push 0
     tmp = os.path.join(_temp_dir(), "DBS_SplatTrain_3d.nk")
     with open(tmp, "w") as f:
         f.write(text)
-    nuke.selectAll()
-    nuke.invertSelection()
-    nuke.nodePaste(tmp)
+    # A button runs inside the Group: paste next to the node, in its parent (root or a group).
+    parent = name.rpartition(".")[0] or "root"
+    nuke.tcl("in %s {source {%s}}" % (parent, _fwd(tmp)))
     _set_status(node, "3D setup created next to the node")
 
 
