@@ -1,3 +1,5 @@
+![DBS_SplatTrain: Gaussian splats from your camera track, in Nuke](docs/images/banner.jpg)
+
 # DBS_SplatTrain
 
 By David Borrull, VFX compositor. MIT licence (see LICENSE). Provisional name.
@@ -28,6 +30,8 @@ the Brush releases page), or set its path on the node.
 
 ## Use
 
+![The DBS_SplatTrain panel](docs/images/panel.png)
+
 1. Connect the plate to `plate`, the tracked camera to `cam`, the CameraTracker's point cloud to
    `points` and, if something moves, a roto of it (alpha) to `mask`. The plate must be
    undistorted (the cameras are pinhole).
@@ -49,6 +53,15 @@ The node outputs an image, so the splat itself is not in the 3D viewer. **create
 it next to the node as GeoImport -> SplatRender (through the same camera) -> OCIOColorSpace, to
 see and edit it in 3D: e.g. to remove part of it, a GeoDeletePoints between GeoImport and
 SplatRender with a FieldShape in its mask.
+
+![The node with a roto on 'mask', and the 3D setup next to it](docs/images/graph.png)
+
+![Left: the plate. Right: the trained splat in Nuke's 3D viewer](docs/images/viewer.jpg)
+
+A mask is for things that move: Brush ignores those pixels and learns the background from the
+frames where it is visible. It does not remove a static object (e.g. a lamppost masked in every
+frame): nothing is learned behind it, and a soft ghost stays where it was. Delete that in the 3D
+setup, or clean the plate in 2D before training.
 
 ### Colour
 
@@ -93,3 +106,5 @@ the rest by name; the export runs in a separate Nuke terminal.
 
 `python tests/test_dataset.py` (plain Python), and `python tests/synthetic_brush.py work/synth`
 (numpy, Pillow, Brush: trains a synthetic box and checks the splat lands on it, about 20 s).
+
+`python tools/make_icon.py` and `python tools/make_banner.py` redraw the icon and the banner.

@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.1.0 (unreleased)
+- README banner (`tools/make_banner.py`) and screenshots; note on what masks can and cannot remove.
 - Fix: `create 3D setup` put the nodes inside the DBS_SplatTrain group; now they go next to it.
 - New nodes take `first` / `last` from the script's frame range (Project Settings) instead of 0.
 - Training progress every 5 % (was 10 %), with the time since the start from the first poll;

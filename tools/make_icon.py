@@ -43,7 +43,8 @@ def draw(size):
     return img.resize((size, size), Image.LANCZOS)
 
 
-draw(24).save(os.path.join(ROOT, "nuke", "DBS_SplatTrain.png"))
-draw(48).save(os.path.join(ROOT, "nuke", "DBS_SplatTrain@2x.png"))
-draw(256).save(os.path.join(ROOT, "docs", "icon_256.png")) if os.path.isdir(os.path.join(ROOT, "docs")) else None
-print("ok")
+if __name__ == "__main__":
+    draw(24).save(os.path.join(ROOT, "nuke", "DBS_SplatTrain.png"))
+    draw(48).save(os.path.join(ROOT, "nuke", "DBS_SplatTrain@2x.png"))
+    draw(256).save(os.path.join(ROOT, "docs", "icon_256.png")) if os.path.isdir(os.path.join(ROOT, "docs")) else None
+    print("ok")
