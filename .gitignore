@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.nk~
+*.nknc~
+*.autosave
+# datasets, Brush exports and binaries stay out of the repo
+work/
+*_exports/
+bin/
+*.ply
+# Brush GPU autotune cache (written to its working folder)
+target/
