@@ -23,7 +23,7 @@ import nuke
 
 from . import splat_ply
 from .colour import SRGB_ROLE
-from .template import node_template, splat_expr
+from .template import node_template
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 EXPORTER = os.path.join(ROOT, "tools", "DBS_export_shot.py")
@@ -288,6 +288,8 @@ def _start_train(node, then=None):
         node["splat_file"].setValue(_fwd(name))
         if "proxy_file" in node.knobs():
             node["proxy_file"].setValue("")       # a proxy of the previous splat
+        if node["dbs_loaded"].value():
+            _apply_splat(node)
         update_info(node)
         _set_status(node, "trained %d steps in %s" % (steps, _minutes(sec)), "trained")
         if then is not None:
@@ -316,9 +318,8 @@ def _load(node):
         node["splat_file"].setValue(path)
     if not os.path.isfile(path):
         raise SplatError("File not found: %s" % path)
-    if "use_proxy" not in node.knobs():         # nodes from before the proxy: set the file
-        nuke.knob(node.fullName() + ".DBS_Splat.file", path)
     node["dbs_loaded"].setValue(True)
+    _apply_splat(node)
     update_info(node)
     _set_status(node, "loaded %s" % os.path.basename(path), "splat loaded")
 
@@ -340,10 +341,16 @@ def create_3d(node):
     (sRGB -> scene_linear) to the right of the node, so the splat can be edited in 3D (Field
     nodes, GeoDeletePoints between GeoImport and SplatRender). Connects by 'push [node ...]'
     and pastes with nothing selected: no Node objects besides this one."""
-    path = node["splat_file"].value().strip()
+    path = _active_splat(node)[0]
     if not path or not os.path.isfile(path):
         raise SplatError("No splat to put in 3D: train and load first, or pick a .ply in 'splat'.")
     name = node.fullName()
+    parent = name.rpartition(".")[0]
+    geo = "DBS_Splat3D"
+    i = 0
+    while nuke.exists(_root_path(parent, geo)):   # its own name, so 'use proxy' can find it
+        i += 1
+        geo = "DBS_Splat3D%d" % i
     cam = _input_name(name, 1)
     try:
         x, y = int(float(nuke.tcl("value %s.xpos" % name))), int(float(nuke.tcl("value %s.ypos" % name)))
@@ -354,7 +361,7 @@ def create_3d(node):
   inputs 0
   file %(file)s
   label "splat from %(node)s\\nedit here (Field nodes, GeoDeletePoints)"
-  name DBS_Splat3D
+  name %(geo)s
   xpos %(x)d
   ypos %(y0)d
  }
@@ -377,15 +384,22 @@ push 0
   ypos %(y2)d
  }
 """ % dict(cam="push [node %s]\n" % cam if cam else "push 0\n", node=node.name(),
-           file="{%s}" % splat_expr(name) if "use_proxy" in node.knobs() else _nk_quote(path),
+           file=_nk_quote(path), geo=geo,
            srgb=SRGB_ROLE, x=x + 250, y0=y - 120, y1=y - 20, y2=y + 30)
     tmp = os.path.join(_temp_dir(), "DBS_SplatTrain_3d.nk")
     with open(tmp, "w") as f:
         f.write(text)
     # A button runs inside the Group: paste next to the node, in its parent (root or a group).
-    parent = name.rpartition(".")[0] or "root"
-    nuke.tcl("in %s {source {%s}}" % (parent, _fwd(tmp)))
-    _set_status(node, "3D setup created next to the node")
+    nuke.tcl("in %s {source {%s}}" % (parent or "root", _fwd(tmp)))
+    if "dbs_3d" in node.knobs():
+        full = (parent + "." if parent else "") + geo
+        node["dbs_3d"].setValue(" ".join(node["dbs_3d"].value().split() + [full]))
+    _set_status(node, "3D setup created next to the node: %s" % geo)
+
+
+def _root_path(parent, name):
+    """'root.Group1.Name': names that resolve the same from inside a group (where buttons run)."""
+    return "root." + (parent + "." if parent else "") + name
 
 
 # ---- proxy and info -----------------------------------------------------------------------
@@ -427,6 +441,8 @@ def make_proxy(node):
             return
         node["proxy_file"].setValue(_fwd(out))
         node["use_proxy"].setValue(True)
+        if node["dbs_loaded"].value():
+            _apply_splat(node)
         update_info(node)
         _set_status(node, "proxy written in %s: %s" % (_minutes(sec), os.path.basename(out)), "proxy ready")
 
@@ -449,9 +465,43 @@ def update_info(node):
             node[info_knob].setValue(_info(node[file_knob].value()))
 
 
+def _active_splat(node):
+    """(path, is the proxy): the proxy when 'use proxy' is on and it exists, else 'splat'."""
+    if "use_proxy" in node.knobs() and node["use_proxy"].value():
+        proxy = node["proxy_file"].value().strip()
+        if proxy and os.path.isfile(proxy):
+            return proxy, True
+    return node["splat_file"].value().strip(), False
+
+
+def _apply_splat(node):
+    """Put the active splat in the node's GeoImport and in its 3D setups, and reload them: a
+    GeoImport does not re-read its file by itself. Only these few nodes become Python objects
+    (Non-commercial counts distinct nodes, not repeated access)."""
+    path, proxy = _active_splat(node)
+    parent = node.fullName().rpartition(".")[0]
+    targets = [_root_path(parent, node.name() + ".DBS_Splat")]
+    if "dbs_3d" in node.knobs():
+        targets += ["root." + t for t in node["dbs_3d"].value().split()]
+    for t in targets:
+        if not nuke.exists(t):
+            continue
+        try:
+            nuke.knob(t + ".file", path)
+            geo = nuke.toNode(t)
+            if geo is not None and "reload" in geo.knobs():
+                geo["reload"].execute()
+        except Exception as e:
+            _log("could not update %s: %s" % (t, e))
+    if "dbs_mode" in node.knobs():
+        node["dbs_mode"].setValue("proxy" if proxy else "")
+
+
 def knob_changed(node, knob):
     name = knob.name()
-    if name in ("splat_file", "proxy_file"):
+    if name in ("splat_file", "proxy_file", "use_proxy"):
+        if node["dbs_loaded"].value():
+            _apply_splat(node)
         update_info(node)
     elif name == "proxy_size":
         node["proxy_custom"].setVisible(knob.value() == "custom")

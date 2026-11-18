@@ -2,7 +2,7 @@
 
 ## 0.1.0 (unreleased)
 - Proxy: `make proxy` (500k / 100k / custom) writes a decimated copy of the splat with the size as
-  a suffix; `use proxy in the viewer` shows it in the GUI while Write renders use the full splat.
+  a suffix; `use proxy` swaps it in (node and its 3D setups, reloaded), the label says `proxy`.
   Splat count and file size under `splat` and `proxy`. `tools/DBS_decimate_splat.py`,
   `nuke/dbs_splattrain/splat_ply.py` (plain Python: Nuke ships no numpy).
 - README banner (`tools/make_banner.py`) and screenshots; note on what masks can and cannot remove.

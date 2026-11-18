@@ -68,9 +68,9 @@ setup, or clean the plate in 2D before training.
 Under `splat` the panel shows how many splats it has and the file size. A splat of 300k splats or
 more makes the 3D viewer slow: **make proxy** writes a lighter copy next to it with the size as a
 suffix (`splat_30000_500k.ply`, never over the original), keeping the most visible splats
-(opacity x area). Sizes: 500k, 100k or custom. With **use proxy in the viewer** on, the
-viewer (and the 3D setup) shows the proxy and renders from a Write use the full splat (`$gui`
-in the GeoImport's file). It takes under a second for 300k splats; 100k keeps the picture
+(opacity x area). Sizes: 500k, 100k or custom. **use proxy** swaps it in, in the node and in
+the 3D setups it made, and the node's label says `proxy`: renders use it too, so turn it off for
+the final render. It takes under a second for 300k splats; 100k keeps the picture
 but loses the finest detail (grass).
 
 The proxy knobs are on nodes created from this version on: older nodes keep working without them.
