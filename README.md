@@ -100,6 +100,17 @@ python tools/DBS_train_brush.py work/shot --steps 7000
 Python may touch only 10 nodes per session, so the buttons work from their own node and reach
 the rest by name; the export runs in a separate Nuke terminal.
 
+## Planned
+
+Ideas, not implemented yet:
+
+- **Set photos.** Add still photos of the set (sharper, from more angles) to the shot's frames.
+  COLMAP would register them into the track's world, with the track cameras kept fixed, and
+  Brush (or Postshot) would train on both. Mixing photos and video will need COLMAP: neither
+  Brush nor Postshot registers new photos against imported cameras (Postshot ignores images
+  without a pose).
+- **Postshot as a trainer**, next to Brush. Its command line needs a Postshot Studio licence.
+
 ## Brush notes (v0.3.0)
 
 - Formats: COLMAP (checked first) and nerfstudio transforms.json. The exporter writes COLMAP
