@@ -1,6 +1,8 @@
 # Changelog
 
 ## 0.1.0 (unreleased)
+- No load button: the node shows the `.ply` in `splat` as soon as it exists (after training, picked
+  by hand, or a new proxy). `Export + Train` replaces `Export + Train + Load`.
 - Proxy: `make proxy` (500k / 100k / custom) writes a decimated copy of the splat with the size as
   a suffix; `use proxy` swaps it in (node and its 3D setups, reloaded), the label says `proxy`.
   Splat count and file size under `splat` and `proxy`. `tools/DBS_decimate_splat.py`,

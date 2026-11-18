@@ -288,9 +288,7 @@ def _start_train(node, then=None):
         node["splat_file"].setValue(_fwd(name))
         if "proxy_file" in node.knobs():
             node["proxy_file"].setValue("")       # a proxy of the previous splat
-        if node["dbs_loaded"].value():
-            _apply_splat(node)
-        update_info(node)
+        _show(node)
         _set_status(node, "trained %d steps in %s" % (steps, _minutes(sec)), "trained")
         if then is not None:
             try:
@@ -306,9 +304,20 @@ def train(node):
     _start_train(node)
 
 
-# ---- 3. load ------------------------------------------------------------------------------
+# ---- showing the splat --------------------------------------------------------------------
+
+def _show(node):
+    """The node shows the splat as soon as 'splat' holds an existing file (after training, a .ply
+    picked by hand, or a proxy): no load button. Without one, the plate passes through."""
+    path = node["splat_file"].value().strip()
+    node["dbs_loaded"].setValue(bool(path) and os.path.isfile(path))
+    if node["dbs_loaded"].value():
+        _apply_splat(node)
+    update_info(node)
+
 
 def _load(node):
+    """The '3. load' button of nodes made before 0.1.0's automatic loading."""
     path = node["splat_file"].value().strip()
     if not path:
         found = sorted(glob.glob(os.path.join(_work_dir(node), "splats", "splat_*.ply")), key=os.path.getmtime)
@@ -318,9 +327,7 @@ def _load(node):
         node["splat_file"].setValue(path)
     if not os.path.isfile(path):
         raise SplatError("File not found: %s" % path)
-    node["dbs_loaded"].setValue(True)
-    _apply_splat(node)
-    update_info(node)
+    _show(node)
     _set_status(node, "loaded %s" % os.path.basename(path), "splat loaded")
 
 
@@ -441,9 +448,7 @@ def make_proxy(node):
             return
         node["proxy_file"].setValue(_fwd(out))
         node["use_proxy"].setValue(True)
-        if node["dbs_loaded"].value():
-            _apply_splat(node)
-        update_info(node)
+        _show(node)
         _set_status(node, "proxy written in %s: %s" % (_minutes(sec), os.path.basename(out)), "proxy ready")
 
     _run_async(node, cmd, log, done)
@@ -498,9 +503,7 @@ def _apply_splat(node):
 def knob_changed(node, knob):
     name = knob.name()
     if name in ("splat_file", "proxy_file", "use_proxy"):
-        if node["dbs_loaded"].value():
-            _apply_splat(node)
-        update_info(node)
+        _show(node)
     elif name == "proxy_size":
         node["proxy_custom"].setVisible(knob.value() == "custom")
     elif name == "showPanel":
@@ -512,7 +515,7 @@ def knob_changed(node, knob):
 
 @_guard
 def run_all(node):
-    _start_export(node, then=lambda n: _start_train(n, then=_load))
+    _start_export(node, then=_start_train)      # training shows the splat when it ends
 
 
 def stop(node):

@@ -36,13 +36,13 @@ the Brush releases page), or set its path on the node.
    `points` and, if something moves, a roto of it (alpha) to `mask`. The plate must be
    undistorted (the cameras are pinhole).
 2. Save the script: the export reads it from disk (the node saves it again if it has changes).
-3. Press **Export + Train + Load**. Progress shows under the buttons and in the node's label;
+3. Press **Export + Train**. Progress shows under the buttons and in the node's label;
    Nuke stays usable. `stop` ends the current step.
-4. The node outputs the splat rendered through `cam`, in the working colour space (`show splat`
-   off: the plate passes through).
+4. When training ends, the node outputs the splat rendered through `cam`, in the working colour
+   space (`show splat` off: the plate passes through). There is no load button: the node shows
+   whatever `.ply` is in `splat`, so picking one by hand shows it too.
 
-Or step by step: **1. export** (frames every N, cameras, tracker points), **2. train** (Brush),
-**3. load** (or pick any `.ply` in `splat`). Files go to `work folder`, by default
+Or step by step: **1. export** (frames every N, cameras, tracker points), **2. train** (Brush). Files go to `work folder`, by default
 `<script folder>/DBS_SplatTrain/<node name>/`: `dataset/`, `splats/splat_<steps>.ply`,
 `export.log`, `train.log`.
 

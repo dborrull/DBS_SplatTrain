@@ -23,7 +23,7 @@ TIPS = {
     "work_dir": "Folder for the dataset and the trained splats. Empty = next to the script, in "
                 "DBS_SplatTrain/<node name>.",
     "brush": "brush_app.exe (Brush v0.3.0 is in the repo's bin folder).",
-    "splat_file": "The trained splat (.ply). Load fills it in; you can also pick any .ply.",
+    "splat_file": "The splat the node shows (.ply). Training fills it in; you can also pick any .ply.",
     "proxy_size": "How many splats the proxy keeps (the most visible ones). The full splat is never "
                   "overwritten: the proxy goes next to it as splat_<steps>_500k.ply.",
     "proxy_custom": "Number of splats for 'custom'.",
@@ -49,7 +49,7 @@ def _py(call):
 def node_template(brush, srgb, first=0, last=0):
     t = {k + "_t": _tip(k) for k in TIPS}
     t.update(first=int(first), last=int(last), tile=TILE, version=__version__, brush=brush, srgb=srgb,
-             py_export=_py("export"), py_train=_py("train"), py_load=_py("load"),
+             py_export=_py("export"), py_train=_py("train"),
              py_all=_py("run_all"), py_stop=_py("stop"), py_3d=_py("create_3d"),
              py_proxy=_py("make_proxy"),
              py_changed='"import DBS_SplatTrain; DBS_SplatTrain.knob_changed(nuke.thisNode(), nuke.thisKnob())"')
@@ -79,11 +79,10 @@ Group {
  addUserKnob {2 brush l brush%(brush_t)s}
  brush "%(brush)s"
  addUserKnob {26 div_run l run}
- addUserKnob {22 run_all l "<b>  Export + Train + Load  </b>" +STARTLINE T %(py_all)s}
+ addUserKnob {22 run_all l "<b>  Export + Train  </b>" +STARTLINE T %(py_all)s}
  addUserKnob {22 stop l stop -STARTLINE T %(py_stop)s}
  addUserKnob {22 do_export l "1. export" +STARTLINE T %(py_export)s}
  addUserKnob {22 do_train l "2. train" -STARTLINE T %(py_train)s}
- addUserKnob {22 do_load l "3. load" -STARTLINE T %(py_load)s}
  addUserKnob {26 status l "" +STARTLINE T " "}
  addUserKnob {26 div_out l output}
  addUserKnob {2 splat_file l splat%(splat_file_t)s}
