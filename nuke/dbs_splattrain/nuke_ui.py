@@ -475,9 +475,9 @@ def _active_splat(node):
 
 
 def _apply_splat(node):
-    """Put the active splat in the node's GeoImport and in its 3D setups, and reload them: a
-    GeoImport does not re-read its file by itself. Only these few nodes become Python objects
-    (Non-commercial counts distinct nodes, not repeated access)."""
+    """Put the active splat in the node's GeoImport and in its 3D setups. A new path is enough
+    for a GeoImport to re-read it; pressing its 'reload' would fail while the viewer renders
+    ("I'm already executing something else"). By name only: no Node objects."""
     path, proxy = _active_splat(node)
     parent = node.fullName().rpartition(".")[0]
     targets = [_root_path(parent, node.name() + ".DBS_Splat")]
@@ -487,10 +487,8 @@ def _apply_splat(node):
         if not nuke.exists(t):
             continue
         try:
-            nuke.knob(t + ".file", path)
-            geo = nuke.toNode(t)
-            if geo is not None and "reload" in geo.knobs():
-                geo["reload"].execute()
+            if nuke.tcl("value %s.file" % t) != path:
+                nuke.knob(t + ".file", path)
         except Exception as e:
             _log("could not update %s: %s" % (t, e))
     if "dbs_mode" in node.knobs():
