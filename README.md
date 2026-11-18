@@ -63,6 +63,18 @@ frames where it is visible. It does not remove a static object (e.g. a lamppost 
 frame): nothing is learned behind it, and a soft ghost stays where it was. Delete that in the 3D
 setup, or clean the plate in 2D before training.
 
+### Proxy
+
+Under `splat` the panel shows how many splats it has and the file size. A splat of 300k splats or
+more makes the 3D viewer slow: **make proxy** writes a lighter copy next to it with the size as a
+suffix (`splat_30000_500k.ply`, never over the original), keeping the most visible splats
+(opacity x area). Sizes: 500k, 100k or custom. With **use proxy in the viewer** on, the
+viewer (and the 3D setup) shows the proxy and renders from a Write use the full splat (`$gui`
+in the GeoImport's file). It takes under a second for 300k splats; 100k keeps the picture
+but loses the finest detail (grass).
+
+The proxy knobs are on nodes created from this version on: older nodes keep working without them.
+
 ### Colour
 
 Brush learns from sRGB PNGs. The export writes the plate through the OCIO role `texture_paint`
@@ -107,4 +119,5 @@ the rest by name; the export runs in a separate Nuke terminal.
 `python tests/test_dataset.py` (plain Python), and `python tests/synthetic_brush.py work/synth`
 (numpy, Pillow, Brush: trains a synthetic box and checks the splat lands on it, about 20 s).
 
+`python tools/DBS_decimate_splat.py splat.ply --keep=100000` makes a proxy by hand.
 `python tools/make_icon.py` and `python tools/make_banner.py` redraw the icon and the banner.

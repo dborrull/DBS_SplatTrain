@@ -24,6 +24,12 @@ TIPS = {
                 "DBS_SplatTrain/<node name>.",
     "brush": "brush_app.exe (Brush v0.3.0 is in the repo's bin folder).",
     "splat_file": "The trained splat (.ply). Load fills it in; you can also pick any .ply.",
+    "proxy_size": "How many splats the proxy keeps (the most visible ones). The full splat is never "
+                  "overwritten: the proxy goes next to it as splat_<steps>_500k.ply.",
+    "proxy_custom": "Number of splats for 'custom'.",
+    "do_proxy": "Write a lighter copy of 'splat' for a faster viewer (takes a few seconds).",
+    "proxy_file": "The light splat. 'make proxy' fills it in; you can also pick any .ply.",
+    "use_proxy": "Show the proxy in the viewer. Renders (Write) always use the full splat.",
     "show_splat": "Output the rendered splat. Off: the plate passes through.",
     "do_3d": "Put the splat next to this node as a 3D setup (GeoImport -> SplatRender through the "
              "camera -> back to scene_linear), to edit it: e.g. FieldShape into the mask of a "
@@ -39,17 +45,27 @@ def _py(call):
     return '"import DBS_SplatTrain; DBS_SplatTrain.%s(nuke.thisNode())"' % call
 
 
+# The splat the node renders: the proxy in the GUI viewer when 'use_proxy' is on, else the full one
+# (Tcl in a file knob; $gui is 0 in renders). node: the DBS_SplatTrain node ("parent" inside it).
+def splat_expr(node):
+    return ("[if {[value N.use_proxy] && $gui && [string length [value N.proxy_file]]} "
+            "{return [value N.proxy_file]} {return [value N.splat_file]}]").replace("N.", node + ".")
+
+
 def node_template(brush, srgb, first=0, last=0):
     t = {k + "_t": _tip(k) for k in TIPS}
     t.update(first=int(first), last=int(last), tile=TILE, version=__version__, brush=brush, srgb=srgb,
              py_export=_py("export"), py_train=_py("train"), py_load=_py("load"),
-             py_all=_py("run_all"), py_stop=_py("stop"), py_3d=_py("create_3d"))
+             py_all=_py("run_all"), py_stop=_py("stop"), py_3d=_py("create_3d"),
+             py_proxy=_py("make_proxy"), splat_expr=splat_expr("parent"),
+             py_changed='"import DBS_SplatTrain; DBS_SplatTrain.knob_changed(nuke.thisNode(), nuke.thisKnob())"')
     return """set cut_paste_input [stack 0]
 push $cut_paste_input
 Group {
  name DBS_SplatTrain1
  tile_color %(tile)d
  label "\\[value dbs_state]"
+ knobChanged %(py_changed)s
  addUserKnob {20 dbs l DBS_SplatTrain}
  addUserKnob {26 info l "" +STARTLINE T "<i>plate -> 'plate', tracked camera -> 'cam',<br>tracker point cloud -> 'points', roto of what moves (optional) -> 'mask'</i>"}
  addUserKnob {26 div_frames l frames}
@@ -77,9 +93,18 @@ Group {
  addUserKnob {26 status l "" +STARTLINE T " "}
  addUserKnob {26 div_out l output}
  addUserKnob {2 splat_file l splat%(splat_file_t)s}
+ addUserKnob {26 splat_info l "" +STARTLINE T " "}
  addUserKnob {6 show_splat l "show splat" +STARTLINE%(show_splat_t)s}
  addUserKnob {22 do_3d l "create 3D setup" -STARTLINE T %(py_3d)s%(do_3d_t)s}
  show_splat true
+ addUserKnob {26 div_proxy l proxy}
+ addUserKnob {4 proxy_size l "proxy size" M {500k 100k custom}%(proxy_size_t)s}
+ addUserKnob {3 proxy_custom l "" -STARTLINE +HIDDEN%(proxy_custom_t)s}
+ proxy_custom 250000
+ addUserKnob {22 do_proxy l "make proxy" -STARTLINE T %(py_proxy)s%(do_proxy_t)s}
+ addUserKnob {2 proxy_file l proxy%(proxy_file_t)s}
+ addUserKnob {26 proxy_info l "" +STARTLINE T " "}
+ addUserKnob {6 use_proxy l "use proxy in the viewer" +STARTLINE%(use_proxy_t)s}
  addUserKnob {26 ver l "" +STARTLINE T "<small>DBS_SplatTrain v%(version)s  -  by David Borrull</small>"}
  addUserKnob {1 dbs_state +INVISIBLE}
  dbs_state "not trained"
@@ -116,6 +141,7 @@ set N_cam [stack 0]
  }
  GeoImport {
   inputs 0
+  file {%(splat_expr)s}
   name DBS_Splat
   disable {{!parent.dbs_loaded}}
   xpos 150

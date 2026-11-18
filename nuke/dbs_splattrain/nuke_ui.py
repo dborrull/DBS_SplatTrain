@@ -7,6 +7,7 @@ node it belongs to (nuke.thisNode()) and reaches everything else by name (Tcl an
 The heavy work runs in separate processes, so Nuke stays usable:
   export: a Nuke terminal (`-t`) runs tools/DBS_export_shot.py on the saved script
   train:  Brush (brush_app.exe) trains on the exported dataset
+  proxy:  Nuke's python.exe runs tools/DBS_decimate_splat.py (a lighter copy for the viewer)
 Their progress is shown under the buttons and in the node's label."""
 
 import glob
@@ -20,12 +21,14 @@ import time
 
 import nuke
 
+from . import splat_ply
 from .colour import SRGB_ROLE
-from .template import node_template
+from .template import node_template, splat_expr
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 EXPORTER = os.path.join(ROOT, "tools", "DBS_export_shot.py")
 DEFAULT_BRUSH = os.path.join(ROOT, "bin", "brush-v0.3.0", "brush_app.exe")
+DECIMATOR = os.path.join(ROOT, "tools", "DBS_decimate_splat.py")
 PASSTHROUGH = ("Dot", "NoOp", "PostageStamp")
 NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0      # CREATE_NO_WINDOW
 PROGRESS_EXPORTS = 20      # Brush writes this many .ply during training: they show the progress
@@ -283,6 +286,9 @@ def _start_train(node, then=None):
         for f in glob.glob(os.path.join(exports, "progress_*.ply")):
             os.remove(f)
         node["splat_file"].setValue(_fwd(name))
+        if "proxy_file" in node.knobs():
+            node["proxy_file"].setValue("")       # a proxy of the previous splat
+        update_info(node)
         _set_status(node, "trained %d steps in %s" % (steps, _minutes(sec)), "trained")
         if then is not None:
             try:
@@ -310,8 +316,10 @@ def _load(node):
         node["splat_file"].setValue(path)
     if not os.path.isfile(path):
         raise SplatError("File not found: %s" % path)
-    nuke.knob(node.fullName() + ".DBS_Splat.file", path)
+    if "use_proxy" not in node.knobs():         # nodes from before the proxy: set the file
+        nuke.knob(node.fullName() + ".DBS_Splat.file", path)
     node["dbs_loaded"].setValue(True)
+    update_info(node)
     _set_status(node, "loaded %s" % os.path.basename(path), "splat loaded")
 
 
@@ -368,7 +376,8 @@ push 0
   xpos %(x)d
   ypos %(y2)d
  }
-""" % dict(cam="push [node %s]\n" % cam if cam else "push 0\n", file=_nk_quote(path), node=node.name(),
+""" % dict(cam="push [node %s]\n" % cam if cam else "push 0\n", node=node.name(),
+           file="{%s}" % splat_expr(name) if "use_proxy" in node.knobs() else _nk_quote(path),
            srgb=SRGB_ROLE, x=x + 250, y0=y - 120, y1=y - 20, y2=y + 30)
     tmp = os.path.join(_temp_dir(), "DBS_SplatTrain_3d.nk")
     with open(tmp, "w") as f:
@@ -377,6 +386,78 @@ push 0
     parent = name.rpartition(".")[0] or "root"
     nuke.tcl("in %s {source {%s}}" % (parent, _fwd(tmp)))
     _set_status(node, "3D setup created next to the node")
+
+
+# ---- proxy and info -----------------------------------------------------------------------
+
+def _python():
+    """Nuke's own python.exe (next to Nuke.exe), else Nuke in terminal mode."""
+    exe = os.path.join(os.path.dirname(nuke.EXE_PATH), "python.exe" if sys.platform == "win32" else "python3")
+    return [exe] if os.path.isfile(exe) else [nuke.EXE_PATH, "-t"]
+
+
+def _proxy_count(node):
+    size = node["proxy_size"].value()
+    if size == "custom":
+        return max(1000, int(node["proxy_custom"].value()))
+    return splat_ply.PRESETS[size]
+
+
+@_guard
+def make_proxy(node):
+    src = node["splat_file"].value().strip()
+    if not src or not os.path.isfile(src):
+        raise SplatError("No splat to make a proxy of: train and load first, or pick a .ply in 'splat'.")
+    keep = _proxy_count(node)
+    try:
+        total = splat_ply.count(src)
+    except (OSError, splat_ply.PlyError) as e:
+        raise SplatError(str(e))
+    if keep >= total:
+        raise SplatError("The splat has {:,} splats: a {:,} proxy would not be lighter.".format(total, keep))
+    out = splat_ply.decimated_name(src, keep)
+    cmd = _python() + [DECIMATOR, src, "--keep=%d" % keep, "--out=%s" % out]
+    log = os.path.join(os.path.dirname(src), "proxy.log")
+    _set_status(node, "making a {:,}-splat proxy...".format(keep), "making proxy")
+
+    def done(code, sec):
+        if code != 0 or not os.path.isfile(out):
+            _set_status(node, "<font color=orange>proxy failed: see %s</font>" % _fwd(log), "proxy failed")
+            _log("proxy failed:\n" + _tail(log))
+            return
+        node["proxy_file"].setValue(_fwd(out))
+        node["use_proxy"].setValue(True)
+        update_info(node)
+        _set_status(node, "proxy written in %s: %s" % (_minutes(sec), os.path.basename(out)), "proxy ready")
+
+    _run_async(node, cmd, log, done)
+
+
+def _info(path):
+    path = path.strip()
+    if not path:
+        return " "
+    if not os.path.isfile(path):
+        return "<font color=orange>file not found</font>"
+    return "<small>%s</small>" % splat_ply.describe(path)
+
+
+def update_info(node):
+    """Splat count and size of 'splat' and 'proxy' under them (reads only the .ply header)."""
+    for file_knob, info_knob in (("splat_file", "splat_info"), ("proxy_file", "proxy_info")):
+        if info_knob in node.knobs():
+            node[info_knob].setValue(_info(node[file_knob].value()))
+
+
+def knob_changed(node, knob):
+    name = knob.name()
+    if name in ("splat_file", "proxy_file"):
+        update_info(node)
+    elif name == "proxy_size":
+        node["proxy_custom"].setVisible(knob.value() == "custom")
+    elif name == "showPanel":
+        update_info(node)
+        node["proxy_custom"].setVisible(node["proxy_size"].value() == "custom")
 
 
 # ---- all, stop ----------------------------------------------------------------------------
