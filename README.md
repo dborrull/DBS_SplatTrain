@@ -26,11 +26,11 @@ install in Python: the node uses Nuke's own. Only tested on Windows so far.
 2. **Get Brush v0.3.0.** From the [Brush v0.3.0 release](https://github.com/ArthurBrussee/brush/releases/tag/v0.3.0),
    download `brush-app-x86_64-pc-windows-msvc.zip` (159 MB) and unzip it so that the program ends
    up at `DBS_SplatTrain/bin/brush-v0.3.0/brush_app.exe`. Elsewhere works too: set its path in the
-   node's `brush` knob.
+   node's **Settings** tab (`brush`).
    Optional, only for set photos: from the [COLMAP 4.2.1 release](https://github.com/colmap/colmap/releases/tag/4.2.1),
    download `colmap-x64-windows-cuda.zip` (415 MB, NVIDIA; `nocuda` otherwise) and unzip it into
    `DBS_SplatTrain/bin/colmap-4.2.1/` (so that `bin/colmap-4.2.1/bin/colmap.exe` exists), or set
-   the node's `colmap` knob.
+   the node's **Settings** tab (`colmap`).
 3. **Tell Nuke where it is.** Open (or create) `menu.py` in your `.nuke` folder
    (`C:/Users/<you>/.nuke/menu.py` on Windows) and add, with your own path:
 
@@ -81,7 +81,7 @@ Placing them takes a few minutes (2.5 min for 140 frames and 49 photos on an RTX
   2.5 dB better on the track frames, with less motion-blur smear and sharper detail; the splat
   was about 4 times bigger (650k splats) and took twice as long to train.
 
-Or step by step: **1. export** (frames every N, cameras, tracker points, then the photos if any), **2. train** (Brush). Files go to `work folder`, by default
+Or step by step: **1. export** (frames every N, cameras, tracker points, then the photos if any), **2. train** (Brush). Files go to `work folder` (Settings tab), by default
 `<script folder>/DBS_SplatTrain/<node name>/`: `dataset/`, `splats/splat_<steps>.ply`,
 `export.log`, `train.log` (with photos also `colmap/` and `photos.log`).
 

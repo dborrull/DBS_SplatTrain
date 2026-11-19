@@ -83,17 +83,12 @@ Group {
  skip_blurry true
  addUserKnob {26 div_photos l "set photos"}
  addUserKnob {2 photos_dir l "photos folder"%(photos_dir_t)s}
- addUserKnob {2 colmap l colmap%(colmap_t)s}
- colmap "%(colmap)s"
  addUserKnob {26 div_train l training}
  addUserKnob {4 trainer l trainer M {Brush}%(trainer_t)s}
  addUserKnob {3 steps l steps -STARTLINE%(steps_t)s}
  steps 30000
  addUserKnob {3 max_res l "max resolution" -STARTLINE%(max_res_t)s}
  max_res 1920
- addUserKnob {2 work_dir l "work folder"%(work_dir_t)s}
- addUserKnob {2 brush l brush%(brush_t)s}
- brush "%(brush)s"
  addUserKnob {26 div_run l run}
  addUserKnob {22 run_all l "<b>  Export + Train  </b>" +STARTLINE T %(py_all)s}
  addUserKnob {22 stop l stop -STARTLINE T %(py_stop)s}
@@ -115,6 +110,15 @@ Group {
  addUserKnob {26 proxy_info l "" +STARTLINE T " "}
  addUserKnob {6 use_proxy l "use proxy" +STARTLINE%(use_proxy_t)s}
  addUserKnob {26 ver l "" +STARTLINE T "<small>DBS_SplatTrain v%(version)s  -  by David Borrull</small>"}
+ addUserKnob {20 dbs_settings l Settings}
+ addUserKnob {26 settings_info l "" +STARTLINE T "<i>Where the files go and where the programs are.<br>Set once; the defaults usually work.</i>"}
+ addUserKnob {26 div_folders l folders}
+ addUserKnob {2 work_dir l "work folder"%(work_dir_t)s}
+ addUserKnob {26 div_programs l programs}
+ addUserKnob {2 brush l brush%(brush_t)s}
+ brush "%(brush)s"
+ addUserKnob {2 colmap l colmap%(colmap_t)s}
+ colmap "%(colmap)s"
  addUserKnob {1 dbs_state +INVISIBLE}
  dbs_state "not trained"
  addUserKnob {6 dbs_loaded +INVISIBLE}
