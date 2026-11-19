@@ -1,6 +1,9 @@
 # Changelog
 
 ## 0.1.0 (unreleased)
+- `skip blurry frames` (on for new nodes; exporter `--sharpest`): in each group of N frames the
+  export takes the sharpest one (mean squared Laplacian at half resolution, measured by
+  `tools/DBS_frame_sharpness.py` in a second Nuke terminal). The status says how many were swapped.
 - No load button: the node shows the `.ply` in `splat` as soon as it exists (after training, picked
   by hand, or a new proxy). `Export + Train` replaces `Export + Train + Load`.
 - Proxy: `make proxy` (500k / 100k / custom) writes a decimated copy of the splat with the size as

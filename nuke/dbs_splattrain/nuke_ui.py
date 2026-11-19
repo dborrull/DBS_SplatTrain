@@ -178,6 +178,19 @@ def _minutes(sec):
 
 # ---- 1. export ----------------------------------------------------------------------------
 
+def _swapped(log):
+    """', 23 blurry ones swapped' from the export log's 'skip blurry frames' line, else ''."""
+    try:
+        with open(log) as f:
+            for line in f:
+                m = re.search(r"skip blurry frames: (\d+) of", line)
+                if m:
+                    return ", %s blurry ones swapped" % m.group(1)
+    except OSError:
+        pass
+    return ""
+
+
 def _start_export(node, then=None):
     name = node.fullName()
     plate, cam = _input_name(name, 0), _input_name(name, 1)
@@ -207,6 +220,8 @@ def _start_export(node, then=None):
         cmd.append("--points=%s" % points)
     if mask:
         cmd.append("--mask=%s" % mask)
+    if "skip_blurry" in node.knobs() and node["skip_blurry"].value():
+        cmd.append("--sharpest")
     log = os.path.join(out, "export.log")
     _set_status(node, "exporting frames and cameras...", "exporting")
 
@@ -217,7 +232,8 @@ def _start_export(node, then=None):
             _set_status(node, "<font color=orange>export failed: see %s</font>" % _fwd(log), "export failed")
             _log("export failed:\n" + _tail(log))
             return
-        _set_status(node, "exported %d frames in %s" % (n, _minutes(sec)), "exported %d frames" % n)
+        swapped = _swapped(log)
+        _set_status(node, "exported %d frames in %s%s" % (n, _minutes(sec), swapped), "exported %d frames" % n)
         if then is not None:
             try:
                 then(node)

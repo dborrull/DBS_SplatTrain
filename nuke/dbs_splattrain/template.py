@@ -16,6 +16,9 @@ TIPS = {
     "last": "Last frame to train from. Set to the script's range when the node is created. "
             "0 = the plate's last frame.",
     "step": "Use one frame every N. 3 works well: about 80 frames from 240.",
+    "skip_blurry": "In each group of N frames, export the sharpest one instead of the first. Helps "
+                   "with fast camera moves and motion blur (the export takes about 30 s more for "
+                   "400 frames).",
     "trainer": "Program that trains the splat. Only Brush for now.",
     "steps": "Training steps. 30000 for quality (about 20 min for 80 frames on an RTX 4060 Ti), "
              "7000 for a quick test.",
@@ -69,6 +72,8 @@ Group {
  last %(last)d
  addUserKnob {3 step l "every N frames" -STARTLINE%(step_t)s}
  step 3
+ addUserKnob {6 skip_blurry l "skip blurry frames" +STARTLINE%(skip_blurry_t)s}
+ skip_blurry true
  addUserKnob {26 div_train l training}
  addUserKnob {4 trainer l trainer M {Brush}%(trainer_t)s}
  addUserKnob {3 steps l steps -STARTLINE%(steps_t)s}

@@ -42,6 +42,11 @@ the Brush releases page), or set its path on the node.
    space (`show splat` off: the plate passes through). There is no load button: the node shows
    whatever `.ply` is in `splat`, so picking one by hand shows it too.
 
+**skip blurry frames** (on by default): in each group of N frames, the export takes the sharpest
+one instead of the first, so frames with motion blur from fast camera moves stay out of the
+training. The sharpness is measured on edges, so it only compares frames next to each other
+(a checked tablecloth is "sharper" than a white wall). It adds about 30 s for 400 frames.
+
 Or step by step: **1. export** (frames every N, cameras, tracker points), **2. train** (Brush). Files go to `work folder`, by default
 `<script folder>/DBS_SplatTrain/<node name>/`: `dataset/`, `splats/splat_<steps>.ply`,
 `export.log`, `train.log`.
@@ -87,9 +92,12 @@ The node runs these; they also work by hand:
 
 ```
 "C:/Program Files/Nuke17.1v1/Nuke17.1.exe" --nc -t tools/DBS_export_shot.py shot.nk Read1 Camera1 work/shot ^
-    --points=CameraTrackerPointCloud1 --mask=Roto1 --first=1001 --last=1100 --step=2
+    --points=CameraTrackerPointCloud1 --mask=Roto1 --first=1001 --last=1100 --step=2 --sharpest
 python tools/DBS_train_brush.py work/shot --steps 7000
 ```
+
+`--sharpest` is `skip blurry frames`. It runs `tools/DBS_frame_sharpness.py` in a second Nuke
+terminal, which also works on its own (`<script> <plate> --first=F --last=L --out=sharpness.json`).
 
 - Write options as `--step=2`: Nuke takes a loose number on its command line as a frame range.
 - Non-square pixels (e.g. 1280x1080 at 1.5) are stretched to square (1920x1080).

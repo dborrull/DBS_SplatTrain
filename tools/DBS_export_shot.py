@@ -4,12 +4,15 @@
 
 "C:/Program Files/Nuke17.1v1/Nuke17.1.exe" --nc -t tools/DBS_export_shot.py <script.nk> <read>
     <camera> <out_dir> [--points=CameraTrackerPointCloud1] [--mask=Roto1] [--first=F] [--last=L]
-    [--step=N] [--format=colmap|nerfstudio]   (always '=': Nuke eats loose numbers as a frame range)
+    [--step=N] [--sharpest] [--format=colmap|nerfstudio]
+    (always '=': Nuke eats loose numbers as a frame range)
 
 <read>: the plate node (undistorted: the dataset cameras are pinhole). <camera>: the tracked camera
 (e.g. from CameraTracker 'Create Camera'). --points: the tracker's point cloud (initial splats).
 --mask: a node whose alpha is 1 on what moves; written to masks/ inverted (black = ignored by
 Brush). Frames first..last every step (default: the read's range, every frame).
+--sharpest: in each group of 'step' frames, export the sharpest one instead of the first (skips
+frames with motion blur; measured by tools/DBS_frame_sharpness.py in a second Nuke terminal).
 
 Writes out_dir/images/frame_NNNN.png (sRGB), out_dir/masks/..., the cameras (COLMAP binary in
 sparse/0, or transforms.json) and out_dir/../<name>_points.ply to compare in Nuke.
@@ -18,7 +21,9 @@ Non-commercial allows about 10 Python Node objects per session: this uses at mos
 """
 
 import argparse
+import json
 import os
+import subprocess
 import sys
 import time
 
@@ -27,6 +32,28 @@ import nuke
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "nuke"))
 from dbs_splattrain import colour, dataset  # noqa: E402
+
+SHARPNESS = os.path.join(ROOT, "tools", "DBS_frame_sharpness.py")
+
+
+def sharpest_frames(script, plate, first, last, step, json_path):
+    """The sharpest frame of each group of 'step' frames. Measured in a second Nuke terminal:
+    Non-commercial allows about 10 Python Node objects per session and this one needs its 9."""
+    cmd = [nuke.EXE_PATH] + (["--nc"] if nuke.env.get("nc") else []) + [
+        "-t", SHARPNESS, script, plate, "--first=%d" % first, "--last=%d" % last, "--out=%s" % json_path]
+    res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    for line in res.stdout.splitlines():
+        if line.startswith("DBS:"):
+            print(line)
+    if res.returncode != 0 or not os.path.isfile(json_path):
+        sys.exit("DBS: sharpness measure failed:\n" + res.stdout[-2000:])
+    with open(json_path) as f:
+        s = {int(k): v for k, v in json.load(f)["frames"].items()}
+    picked = []
+    for start in range(first, last + 1, step):
+        group = [f for f in range(start, min(start + step, last + 1)) if f in s]
+        picked.append(max(group, key=lambda f: s[f]) if group else start)
+    return picked
 
 
 def rigid(wm):
@@ -85,7 +112,7 @@ def render(src, path, frames, expr=None, square=None):
     print("DBS: Write colorspace:", w["colorspace"].value())
     w.setInput(0, node)
     t0 = time.time()
-    nuke.executeMultiple([w], [(frames[0], frames[-1], frames[1] - frames[0] if len(frames) > 1 else 1)])
+    nuke.executeMultiple([w], [(f, f, 1) for f in frames])
     return time.time() - t0
 
 
@@ -98,6 +125,7 @@ def main():
     ap.add_argument("--first", type=int)
     ap.add_argument("--last", type=int)
     ap.add_argument("--step", type=int, default=1)
+    ap.add_argument("--sharpest", action="store_true")
     ap.add_argument("--format", choices=("colmap", "nerfstudio"), default="colmap")
     a = ap.parse_args(sys.argv[1:])
 
@@ -107,7 +135,15 @@ def main():
         sys.exit("DBS: node not found: %s" % (a.read if read is None else a.camera))
     first = a.first if a.first is not None else int(read.firstFrame())
     last = a.last if a.last is not None else int(read.lastFrame())
-    frames = list(range(first, last + 1, max(1, a.step)))
+    step = max(1, a.step)
+    frames = list(range(first, last + 1, step))
+    out = os.path.abspath(a.out_dir)
+    if a.sharpest and step > 1:
+        picked = sharpest_frames(a.script, a.read, first, last, step,
+                                 os.path.join(os.path.dirname(out), "sharpness.json"))
+        print("DBS: skip blurry frames: %d of %d frames swapped for a sharper one next to them"
+              % (sum(p != f for p, f in zip(picked, frames)), len(frames)))
+        frames = picked
     w, h = read.width(), read.height()
     pa = read.pixelAspect()
     square = None
@@ -115,7 +151,6 @@ def main():
         w = int(round(w * pa))
         square = (w, h)
         print("DBS: pixel aspect %.3g: images stretched to %dx%d square pixels" % (pa, w, h))
-    out = os.path.abspath(a.out_dir)
     for sub in ("images", "masks") if a.mask else ("images",):
         if not os.path.isdir(os.path.join(out, sub)):
             os.makedirs(os.path.join(out, sub))
