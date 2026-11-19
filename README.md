@@ -130,6 +130,13 @@ Ideas, not implemented yet:
   Brush (or Postshot) would train on both. Mixing photos and video will need COLMAP: neither
   Brush nor Postshot registers new photos against imported cameras (Postshot ignores images
   without a pose).
+
+  First test, by hand (an indoor shot: a 15 s phone video, tracked in Nuke, and 49 photos):
+  COLMAP 4.2.1 placed 35 of the photos in the track's world without moving the track cameras
+  (close-ups that show little else fail). Trained with the same 30000 steps, video + photos is
+  1.5 to 2.5 dB better on the track frames: less motion-blur smear and sharper detail. The splat
+  is about 4 times bigger (650k splats) and took twice as long. The photos come out a little
+  darker: their exposure differs from the video, and Brush does not compensate for it.
 - **Postshot Studio support.** We are working on it for the next versions: pick Postshot in the
   node's `trainer` menu, next to Brush, and train with it without leaving Nuke (same dataset,
   same masks, the splat back in the node). It needs a Postshot Studio licence (its command line).
