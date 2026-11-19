@@ -180,3 +180,20 @@ Not in the node yet:
 
 `python tools/DBS_decimate_splat.py splat.ply --keep=100000` makes a proxy by hand.
 `python tools/make_icon.py` and `python tools/make_banner.py` redraw the icon and the banner.
+
+## Uses
+
+- [Brush](https://github.com/ArthurBrussee/brush) by Arthur Brussee (Apache 2.0) trains the splats.
+- [COLMAP](https://colmap.github.io/) (BSD) places the set photos.
+
+Neither is included: download them as the Install section says.
+
+## How it was made
+
+Designed and tested by David Borrull, a VFX compositor. The code was written with Claude
+(Anthropic), directed and tested shot by shot in Nuke 17. Version history:
+[CHANGELOG.md](CHANGELOG.md).
+
+## Licence
+
+MIT © 2026 David Borrull
