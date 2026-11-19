@@ -3,7 +3,8 @@
 ## 0.2.0 (unreleased)
 - Panel: `work folder`, `brush` and `colmap` moved to a Settings tab; the main tab keeps what
   changes per shot.
-- Set photos: a `photos` folder on the node. After the export, `tools/DBS_add_photos.py` has
+- Set photos: an `add photos (optional)` section with a `photos folder` knob: extra photos of the
+  set, trained together with the shot's frames. After the export, `tools/DBS_add_photos.py` has
   COLMAP place them in the track's world (track cameras and focal kept exactly), undistorts them
   and adds them, with COLMAP's points, to the dataset. The status says how many were placed.
   New `colmap` knob (COLMAP 4.2.1 in `bin/`).

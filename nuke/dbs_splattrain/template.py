@@ -81,8 +81,9 @@ Group {
  step 3
  addUserKnob {6 skip_blurry l "skip blurry frames" +STARTLINE%(skip_blurry_t)s}
  skip_blurry true
- addUserKnob {26 div_photos l "set photos"}
+ addUserKnob {26 div_photos l "add photos (optional)"}
  addUserKnob {2 photos_dir l "photos folder"%(photos_dir_t)s}
+ addUserKnob {26 photos_info l "" +STARTLINE T "<i>extra photos of the set, trained together with the shot's frames</i>"}
  addUserKnob {26 div_train l training}
  addUserKnob {4 trainer l trainer M {Brush}%(trainer_t)s}
  addUserKnob {3 steps l steps -STARTLINE%(steps_t)s}
