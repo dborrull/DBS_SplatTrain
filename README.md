@@ -16,17 +16,30 @@ Nuke     render every Nth frame (+ masks of what moves), CameraTracker camera pe
 
 ## Install
 
-In `~/.nuke/menu.py`:
+Requirements: **Nuke 17** (its splat nodes, GeoImport and SplatRender; Non-commercial works),
+**Windows**, and a GPU that runs Brush (tested on an NVIDIA RTX 4060 Ti, 8 GB). Nothing to
+install in Python: the node uses Nuke's own. Only tested on Windows so far.
 
-```python
-nuke.pluginAddPath("C:/path/to/DBS_SplatTrain/nuke")
-import DBS_SplatTrain
-DBS_SplatTrain.install_menu()
-```
+1. **Get DBS_SplatTrain.** On GitHub, **Code > Download ZIP** (or the zip of a release) and
+   unzip it anywhere, e.g. `C:/nuke_tools/DBS_SplatTrain`. Or
+   `git clone https://github.com/dborrull/DBS_SplatTrain`.
+2. **Get Brush v0.3.0.** From the [Brush v0.3.0 release](https://github.com/ArthurBrussee/brush/releases/tag/v0.3.0),
+   download `brush-app-x86_64-pc-windows-msvc.zip` (159 MB) and unzip it so that the program ends
+   up at `DBS_SplatTrain/bin/brush-v0.3.0/brush_app.exe`. Elsewhere works too: set its path in the
+   node's `brush` knob.
+3. **Tell Nuke where it is.** Open (or create) `menu.py` in your `.nuke` folder
+   (`C:/Users/<you>/.nuke/menu.py` on Windows) and add, with your own path:
 
-The node is then in the Nodes toolbar under **DBS > DBS_SplatTrain** (and in **3D**). Brush
-v0.3.0 for Windows goes in `bin/brush-v0.3.0/brush_app.exe` (not in the repo; download it from
-the Brush releases page), or set its path on the node.
+   ```python
+   nuke.pluginAddPath("C:/nuke_tools/DBS_SplatTrain/nuke")
+   import DBS_SplatTrain
+   DBS_SplatTrain.install_menu()
+   ```
+
+4. **Restart Nuke.** The node is in the Nodes toolbar under **DBS > DBS_SplatTrain** (and in
+   **3D**).
+
+Use Brush v0.3.0: later versions changed their command line (see Brush notes below).
 
 ## Use
 
