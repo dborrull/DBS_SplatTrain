@@ -19,7 +19,8 @@ TIPS = {
     "skip_blurry": "In each group of N frames, export the sharpest one instead of the first. Helps "
                    "with fast camera moves and motion blur (the export takes about 30 s more for "
                    "400 frames).",
-    "photos_dir": "Optional: a folder of still photos of the set (same lens for all of them). After "
+    "photos_dir": "Optional: a folder of still photos of the set (.jpg .png .tif, any names, same lens "
+                  "for all of them; subfolders are left out). Pick the folder, or any photo in it. After "
                   "the export, COLMAP places them in the track's world, without moving the track "
                   "cameras, and the splat trains on the frames and the photos. Close-ups that show "
                   "little else may not be placed. Empty = frames only.",
@@ -81,7 +82,7 @@ Group {
  addUserKnob {6 skip_blurry l "skip blurry frames" +STARTLINE%(skip_blurry_t)s}
  skip_blurry true
  addUserKnob {26 div_photos l "set photos"}
- addUserKnob {2 photos_dir l photos%(photos_dir_t)s}
+ addUserKnob {2 photos_dir l "photos folder"%(photos_dir_t)s}
  addUserKnob {2 colmap l colmap%(colmap_t)s}
  colmap "%(colmap)s"
  addUserKnob {26 div_train l training}

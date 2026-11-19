@@ -67,7 +67,7 @@ training. The sharpness is measured on edges, so it only compares frames next to
 ### Set photos
 
 Still photos of the set (sharper than the video, from other places) can train together with the
-frames: put them in a folder and set it in **photos**. After the export, COLMAP places them in the
+frames: put them in a folder and set it in **photos folder** (the folder, or any photo in it; subfolders are left out). After the export, COLMAP places them in the
 track's world without moving the track cameras, the dataset gets the photos it could place (the
 status says e.g. `photos placed: 35 of 49`) and COLMAP's denser points, and training uses both.
 Placing them takes a few minutes (2.5 min for 140 frames and 49 photos on an RTX 4060 Ti).
