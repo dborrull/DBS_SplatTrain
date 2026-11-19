@@ -123,11 +123,12 @@ the rest by name; the export runs in a separate Nuke terminal.
 
 ## Planned
 
-Ideas, not implemented yet:
+Not in the node yet:
 
-- **Set photos.** Add still photos of the set (sharper, from more angles) to the shot's frames.
-  COLMAP would register them into the track's world, with the track cameras kept fixed, and
-  Brush (or Postshot) would train on both. Mixing photos and video will need COLMAP: neither
+- **Set photos** (it works, tested by hand; the node does not do it yet). Add still photos of the
+  set (sharper, from more angles) to the shot's frames. COLMAP registers them into the track's
+  world, with the track cameras kept fixed, and Brush (or Postshot) trains on both. Mixing photos
+  and video needs COLMAP: neither
   Brush nor Postshot registers new photos against imported cameras (Postshot ignores images
   without a pose).
 
@@ -137,6 +138,7 @@ Ideas, not implemented yet:
   1.5 to 2.5 dB better on the track frames: less motion-blur smear and sharper detail. The splat
   is about 4 times bigger (650k splats) and took twice as long. The photos come out a little
   darker: their exposure differs from the video, and Brush does not compensate for it.
+
 - **Postshot Studio support.** We are working on it for the next versions: pick Postshot in the
   node's `trainer` menu, next to Brush, and train with it without leaving Nuke (same dataset,
   same masks, the splat back in the node). It needs a Postshot Studio licence (its command line).
