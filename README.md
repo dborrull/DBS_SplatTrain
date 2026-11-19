@@ -109,9 +109,9 @@ Ideas, not implemented yet:
   Brush (or Postshot) would train on both. Mixing photos and video will need COLMAP: neither
   Brush nor Postshot registers new photos against imported cameras (Postshot ignores images
   without a pose).
-- **Postshot from inside Nuke.** Pick Postshot in the node's `trainer` menu, next to Brush, and
-  train with it without leaving Nuke: same dataset, same masks, the splat back in the node.
-  Postshot's command line needs a Postshot Studio licence.
+- **Postshot Studio support.** We are working on it for the next versions: pick Postshot in the
+  node's `trainer` menu, next to Brush, and train with it without leaving Nuke (same dataset,
+  same masks, the splat back in the node). It needs a Postshot Studio licence (its command line).
 
 ## Brush notes (v0.3.0)
 
