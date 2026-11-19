@@ -27,6 +27,10 @@ install in Python: the node uses Nuke's own. Only tested on Windows so far.
    download `brush-app-x86_64-pc-windows-msvc.zip` (159 MB) and unzip it so that the program ends
    up at `DBS_SplatTrain/bin/brush-v0.3.0/brush_app.exe`. Elsewhere works too: set its path in the
    node's `brush` knob.
+   Optional, only for set photos: from the [COLMAP 4.2.1 release](https://github.com/colmap/colmap/releases/tag/4.2.1),
+   download `colmap-x64-windows-cuda.zip` (415 MB, NVIDIA; `nocuda` otherwise) and unzip it into
+   `DBS_SplatTrain/bin/colmap-4.2.1/` (so that `bin/colmap-4.2.1/bin/colmap.exe` exists), or set
+   the node's `colmap` knob.
 3. **Tell Nuke where it is.** Open (or create) `menu.py` in your `.nuke` folder
    (`C:/Users/<you>/.nuke/menu.py` on Windows) and add, with your own path:
 
@@ -60,9 +64,26 @@ one instead of the first, so frames with motion blur from fast camera moves stay
 training. The sharpness is measured on edges, so it only compares frames next to each other
 (a checked tablecloth is "sharper" than a white wall). It adds about 30 s for 400 frames.
 
-Or step by step: **1. export** (frames every N, cameras, tracker points), **2. train** (Brush). Files go to `work folder`, by default
+### Set photos
+
+Still photos of the set (sharper than the video, from other places) can train together with the
+frames: put them in a folder and set it in **photos**. After the export, COLMAP places them in the
+track's world without moving the track cameras, the dataset gets the photos it could place (the
+status says e.g. `photos placed: 35 of 49`) and COLMAP's denser points, and training uses both.
+Placing them takes a few minutes (2.5 min for 140 frames and 49 photos on an RTX 4060 Ti).
+
+- Shoot the photos with one lens (all the same zoom), ideally the same light and exposure as the
+  video: Brush does not even out exposure, so darker photos make the splat a bit darker there.
+- Each photo needs enough in common with the video or other photos. A close-up of a cushion
+  alone is not placed; take a wider one of the same place first.
+- Photos are not masked: keep moving things out of them.
+- In a first indoor test (15 s phone video, 49 photos, 35 placed), video + photos was 1.5 to
+  2.5 dB better on the track frames, with less motion-blur smear and sharper detail; the splat
+  was about 4 times bigger (650k splats) and took twice as long to train.
+
+Or step by step: **1. export** (frames every N, cameras, tracker points, then the photos if any), **2. train** (Brush). Files go to `work folder`, by default
 `<script folder>/DBS_SplatTrain/<node name>/`: `dataset/`, `splats/splat_<steps>.ply`,
-`export.log`, `train.log`.
+`export.log`, `train.log` (with photos also `colmap/` and `photos.log`).
 
 Timing on an RTX 4060 Ti (8 GB): export about 1 min for 80 frames at 1920x1080; training 30000
 steps about 20 min.
@@ -112,6 +133,12 @@ python tools/DBS_train_brush.py work/shot --steps 7000
 `--sharpest` is `skip blurry frames`. It runs `tools/DBS_frame_sharpness.py` in a second Nuke
 terminal, which also works on its own (`<script> <plate> --first=F --last=L --out=sharpness.json`).
 
+Set photos by hand, after an export (Nuke's own `python.exe` works):
+
+```
+python tools/DBS_add_photos.py work/shot photos_folder --colmap=bin/colmap-4.2.1/bin/colmap.exe
+```
+
 - Write options as `--step=2`: Nuke takes a loose number on its command line as a frame range.
 - Non-square pixels (e.g. 1280x1080 at 1.5) are stretched to square (1920x1080).
 - Do not leave a `.ply` inside the dataset folder: Brush uses it as the initial splat.
@@ -125,19 +152,8 @@ the rest by name; the export runs in a separate Nuke terminal.
 
 Not in the node yet:
 
-- **Set photos** (it works, tested by hand; the node does not do it yet). Add still photos of the
-  set (sharper, from more angles) to the shot's frames. COLMAP registers them into the track's
-  world, with the track cameras kept fixed, and Brush (or Postshot) trains on both. Mixing photos
-  and video needs COLMAP: neither
-  Brush nor Postshot registers new photos against imported cameras (Postshot ignores images
-  without a pose).
-
-  First test, by hand (an indoor shot: a 15 s phone video, tracked in Nuke, and 49 photos):
-  COLMAP 4.2.1 placed 35 of the photos in the track's world without moving the track cameras
-  (close-ups that show little else fail). Trained with the same 30000 steps, video + photos is
-  1.5 to 2.5 dB better on the track frames: less motion-blur smear and sharper detail. The splat
-  is about 4 times bigger (650k splats) and took twice as long. The photos come out a little
-  darker: their exposure differs from the video, and Brush does not compensate for it.
+- **Even out the photos' exposure** with the video before training (Postshot calls it
+  photometric compensation; Brush does not do it).
 
 - **Postshot Studio support.** We are working on it for the next versions: pick Postshot in the
   node's `trainer` menu, next to Brush, and train with it without leaving Nuke (same dataset,

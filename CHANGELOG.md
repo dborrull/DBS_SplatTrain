@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 (unreleased)
+- Set photos: a `photos` folder on the node. After the export, `tools/DBS_add_photos.py` has
+  COLMAP place them in the track's world (track cameras and focal kept exactly), undistorts them
+  and adds them, with COLMAP's points, to the dataset. The status says how many were placed.
+  New `colmap` knob (COLMAP 4.2.1 in `bin/`).
+
 ## 0.1.0 (2026-11-19)
 - `skip blurry frames` (on for new nodes; exporter `--sharpest`): in each group of N frames the
   export takes the sharpest one (mean squared Laplacian at half resolution, measured by

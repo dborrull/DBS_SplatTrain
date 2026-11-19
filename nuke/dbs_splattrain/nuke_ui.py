@@ -29,6 +29,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 EXPORTER = os.path.join(ROOT, "tools", "DBS_export_shot.py")
 DEFAULT_BRUSH = os.path.join(ROOT, "bin", "brush-v0.3.0", "brush_app.exe")
 DECIMATOR = os.path.join(ROOT, "tools", "DBS_decimate_splat.py")
+PHOTO_ADDER = os.path.join(ROOT, "tools", "DBS_add_photos.py")
+DEFAULT_COLMAP = os.path.join(ROOT, "bin", "colmap-4.2.1", "bin", "colmap.exe")
 PASSTHROUGH = ("Dot", "NoOp", "PostageStamp")
 NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0      # CREATE_NO_WINDOW
 PROGRESS_EXPORTS = 20      # Brush writes this many .ply during training: they show the progress
@@ -52,7 +54,8 @@ def _fwd(p):
 
 def create_node():
     brush = DEFAULT_BRUSH if os.path.isfile(DEFAULT_BRUSH) else ""
-    text = node_template(_fwd(brush), SRGB_ROLE, *_script_range())
+    colmap = DEFAULT_COLMAP if os.path.isfile(DEFAULT_COLMAP) else ""
+    text = node_template(_fwd(brush), SRGB_ROLE, *_script_range(), colmap=_fwd(colmap))
     path = os.path.join(_temp_dir(), "DBS_SplatTrain_node.nk")
     with open(path, "w") as f:
         f.write(text)
@@ -234,13 +237,65 @@ def _start_export(node, then=None):
             return
         swapped = _swapped(log)
         _set_status(node, "exported %d frames in %s%s" % (n, _minutes(sec), swapped), "exported %d frames" % n)
+        try:
+            if _photos_dir(node):
+                _start_photos(node, then)            # the photos, then 'then'
+            elif then is not None:
+                then(node)
+        except SplatError as e:
+            _set_status(node, "<font color=orange>%s</font>" % e)
+
+    _run_async(node, cmd, log, done)
+
+
+# ---- set photos (COLMAP) ------------------------------------------------------------------
+
+def _photos_dir(node):
+    """The 'photos' folder (a file picked in it counts as its folder), or '' (frames only)."""
+    if "photos_dir" not in node.knobs():
+        return ""
+    d = node["photos_dir"].value().strip()
+    if d and os.path.isfile(d):
+        d = os.path.dirname(d)
+    return d.rstrip("/\\")
+
+
+def _start_photos(node, then=None):
+    photos = _photos_dir(node)
+    if not os.path.isdir(photos):
+        raise SplatError("Photos folder not found: %s" % photos)
+    colmap = node["colmap"].value().strip() or DEFAULT_COLMAP
+    if not os.path.isfile(colmap):
+        raise SplatError("COLMAP not found: %s (set 'colmap', or clear 'photos')" % colmap)
+    out = _work_dir(node)
+    data = os.path.join(out, "dataset")
+    cmd = _python() + [PHOTO_ADDER, data, photos, "--colmap=%s" % colmap]
+    log = os.path.join(out, "photos.log")
+    _set_status(node, "placing the photos with COLMAP (a few minutes)...", "placing photos")
+
+    def poll(sec):
+        last = [l for l in _tail(log, 40).splitlines() if l.startswith("DBS:")]
+        step = last[-1][5:] if last else "starting"
+        _set_status(node, "placing the photos with COLMAP: %s, %s" % (step, _minutes(sec)), "placing photos")
+
+    def done(code, sec):
+        text = _tail(log, 400)
+        placed = re.search(r"photos placed: (\d+) of (\d+)", text)
+        if code != 0 or not placed:
+            why = [l[5:] for l in text.splitlines() if l.startswith("DBS:")]
+            _set_status(node, "<font color=orange>photos failed: %s (see %s)</font>"
+                        % (why[-1] if why else "error", _fwd(log)), "photos failed")
+            _log("photos failed:\n" + _tail(log))
+            return
+        _set_status(node, "photos placed: %s of %s in %s" % (placed.group(1), placed.group(2), _minutes(sec)),
+                    "%s photos" % placed.group(1))
         if then is not None:
             try:
                 then(node)
             except SplatError as e:
                 _set_status(node, "<font color=orange>%s</font>" % e)
 
-    _run_async(node, cmd, log, done)
+    _run_async(node, cmd, log, done, poll)
 
 
 @_guard

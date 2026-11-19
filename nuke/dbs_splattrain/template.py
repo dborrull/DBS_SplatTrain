@@ -19,6 +19,11 @@ TIPS = {
     "skip_blurry": "In each group of N frames, export the sharpest one instead of the first. Helps "
                    "with fast camera moves and motion blur (the export takes about 30 s more for "
                    "400 frames).",
+    "photos_dir": "Optional: a folder of still photos of the set (same lens for all of them). After "
+                  "the export, COLMAP places them in the track's world, without moving the track "
+                  "cameras, and the splat trains on the frames and the photos. Close-ups that show "
+                  "little else may not be placed. Empty = frames only.",
+    "colmap": "colmap.exe (COLMAP 4.2.1, in the repo's bin folder). Only needed for photos.",
     "trainer": "Program that trains the splat. Only Brush for now.",
     "steps": "Training steps. 30000 for quality (about 20 min for 80 frames on an RTX 4060 Ti), "
              "7000 for a quick test.",
@@ -49,9 +54,10 @@ def _py(call):
     return '"import DBS_SplatTrain; DBS_SplatTrain.%s(nuke.thisNode())"' % call
 
 
-def node_template(brush, srgb, first=0, last=0):
+def node_template(brush, srgb, first=0, last=0, colmap=""):
     t = {k + "_t": _tip(k) for k in TIPS}
     t.update(first=int(first), last=int(last), tile=TILE, version=__version__, brush=brush, srgb=srgb,
+             colmap=colmap,
              py_export=_py("export"), py_train=_py("train"),
              py_all=_py("run_all"), py_stop=_py("stop"), py_3d=_py("create_3d"),
              py_proxy=_py("make_proxy"),
@@ -74,6 +80,10 @@ Group {
  step 3
  addUserKnob {6 skip_blurry l "skip blurry frames" +STARTLINE%(skip_blurry_t)s}
  skip_blurry true
+ addUserKnob {26 div_photos l "set photos"}
+ addUserKnob {2 photos_dir l photos%(photos_dir_t)s}
+ addUserKnob {2 colmap l colmap%(colmap_t)s}
+ colmap "%(colmap)s"
  addUserKnob {26 div_train l training}
  addUserKnob {4 trainer l trainer M {Brush}%(trainer_t)s}
  addUserKnob {3 steps l steps -STARTLINE%(steps_t)s}
