@@ -1,6 +1,10 @@
 # Changelog
 
 ## 0.2.0 (unreleased)
+- `install.bat` / `uninstall.bat` (`tools/DBS_install.py`, run with Nuke 17's own Python): add or
+  remove the node's lines in `~/.nuke/menu.py` between marker comments (backup
+  `menu.py.bak_DBS_SplatTrain`, never twice, lines added by hand left alone), and download
+  Brush v0.3.0 and, if wanted, COLMAP 4.2.1 (CUDA or not, from `nvidia-smi`) into `bin/`.
 - Panel: `work folder`, `brush` and `colmap` moved to a Settings tab; the main tab keeps what
   changes per shot.
 - Set photos: an `add photos (optional)` section with a `photos folder` knob: extra photos of the

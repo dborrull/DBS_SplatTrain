@@ -20,6 +20,16 @@ Requirements: **Nuke 17** (its splat nodes, GeoImport and SplatRender; Non-comme
 **Windows**, and a GPU that runs Brush (tested on an NVIDIA RTX 4060 Ti, 8 GB). Nothing to
 install in Python: the node uses Nuke's own. Only tested on Windows so far.
 
+**Quick install:** get DBS_SplatTrain (step 1 below), then double-click **`install.bat`** in its
+folder. It adds the node to Nuke's `menu.py` (keeping a copy of the old one as
+`menu.py.bak_DBS_SplatTrain`, and never adding it twice), offers to download Brush v0.3.0 into
+`bin/` (159 MB), and asks whether to get COLMAP too (only for set photos). It runs with Nuke 17's
+own Python, found in `C:/Program Files/Nuke17*`. Restart Nuke and you are done.
+**`uninstall.bat`** takes the lines out of `menu.py` again (lines you added by hand are left
+alone; it tells you which they are). Brush and COLMAP stay in `bin/` until you delete the folder.
+
+Or by hand:
+
 1. **Get DBS_SplatTrain.** On GitHub, **Code > Download ZIP** (or the zip of a release) and
    unzip it anywhere, e.g. `C:/nuke_tools/DBS_SplatTrain`. Or
    `git clone https://github.com/dborrull/DBS_SplatTrain`.
